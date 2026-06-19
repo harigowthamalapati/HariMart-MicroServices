@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.harimart.productservice.client.InventoryClient;
+import com.harimart.productservice.client.InventoryClientFallback;
 import com.harimart.productservice.dto.ProductRequest;
 import com.harimart.productservice.dto.ProductResponse;
 import com.harimart.productservice.dto.external.InventoryRequestDto;
@@ -12,6 +13,7 @@ import com.harimart.productservice.entity.Product;
 import com.harimart.productservice.exception.ResourceNotFoundException;
 import com.harimart.productservice.repository.ProductRepository;
 import com.harimart.productservice.service.ProductService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,8 +23,12 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final InventoryClient inventoryClient;
+    private final InventoryClientFallback inventoryFallback;
 
     @Override
+    @CircuitBreaker(
+            name = "inventoryService",
+            fallbackMethod = "inventoryFallback")
     public ProductResponse createProduct(
             ProductRequest request) {
 
@@ -37,13 +43,12 @@ public class ProductServiceImpl implements ProductService {
 
         Product savedProduct =
                 productRepository.save(product);
+
         inventoryClient.createInventory(
                 new InventoryRequestDto(
                         savedProduct.getId(),
                         0,
-                        "Default Warehouse"
-                )
-        );
+                        "Default Warehouse"));
 
         return mapToResponse(savedProduct);
     }
@@ -113,5 +118,13 @@ public class ProductServiceImpl implements ProductService {
                 product.getImageUrl(),
                 product.getActive()
         );
+    }
+    
+    public ProductResponse inventoryFallback(
+            ProductRequest request,
+            Throwable ex) {
+
+        throw new RuntimeException(
+                "Product created but Inventory Service unavailable");
     }
 }
