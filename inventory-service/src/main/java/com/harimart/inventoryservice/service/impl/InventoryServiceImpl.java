@@ -1,9 +1,14 @@
 package com.harimart.inventoryservice.service.impl;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.harimart.inventoryservice.dto.InventoryRequest;
 import com.harimart.inventoryservice.dto.InventoryResponse;
+import com.harimart.inventoryservice.dto.ReleaseStockRequest;
+import com.harimart.inventoryservice.dto.ReserveStockRequest;
+import com.harimart.inventoryservice.dto.StockAvailabilityResponse;
 import com.harimart.inventoryservice.dto.StockRequest;
 import com.harimart.inventoryservice.entity.Inventory;
 import com.harimart.inventoryservice.exception.ResourceNotFoundException;
@@ -109,4 +114,97 @@ public class InventoryServiceImpl implements InventoryService {
                 inventory.getWarehouseLocation()
         );
     }
+    
+    @Override
+    public StockAvailabilityResponse
+    checkStockAvailability(Long productId) {
+
+        Inventory inventory =
+                inventoryRepository
+                        .findByProductId(productId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Inventory not found"));
+
+        return new StockAvailabilityResponse(
+                inventory.getProductId(),
+                inventory.getAvailableQuantity(),
+                inventory.getAvailableQuantity() > 0
+        );
+    }
+    
+    @Override
+    public void reserveStock(
+            ReserveStockRequest request) {
+
+        Inventory inventory =
+                inventoryRepository
+                        .findByProductId(
+                                request.productId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Inventory not found"));
+
+        if (inventory.getAvailableQuantity()
+                < request.quantity()) {
+
+            throw new RuntimeException(
+                    "Insufficient stock");
+        }
+
+        inventory.setAvailableQuantity(
+                inventory.getAvailableQuantity()
+                        - request.quantity());
+
+        inventory.setReservedQuantity(
+                inventory.getReservedQuantity()
+                        + request.quantity());
+
+        inventoryRepository.save(inventory);
+    }
+    
+    @Override
+    public void releaseStock(
+            ReleaseStockRequest request) {
+
+        Inventory inventory =
+                inventoryRepository
+                        .findByProductId(
+                                request.productId())
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Inventory not found"));
+
+        if (inventory.getReservedQuantity()
+                < request.quantity()) {
+
+            throw new RuntimeException(
+                    "Reserved quantity insufficient");
+        }
+
+        inventory.setReservedQuantity(
+                inventory.getReservedQuantity()
+                        - request.quantity());
+
+        inventory.setAvailableQuantity(
+                inventory.getAvailableQuantity()
+                        + request.quantity());
+
+        inventoryRepository.save(inventory);
+    }
+    
+    @Override
+    public List<InventoryResponse>
+    getLowStockProducts(
+            Integer threshold) {
+
+        return inventoryRepository
+                .findByAvailableQuantityLessThan(
+                        threshold)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+    
+    
 }

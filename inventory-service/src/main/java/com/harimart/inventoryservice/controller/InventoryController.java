@@ -1,10 +1,15 @@
 package com.harimart.inventoryservice.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.harimart.inventoryservice.dto.InventoryRequest;
 import com.harimart.inventoryservice.dto.InventoryResponse;
+import com.harimart.inventoryservice.dto.ReleaseStockRequest;
+import com.harimart.inventoryservice.dto.ReserveStockRequest;
+import com.harimart.inventoryservice.dto.StockAvailabilityResponse;
 import com.harimart.inventoryservice.dto.StockRequest;
 import com.harimart.inventoryservice.service.InventoryService;
 
@@ -61,5 +66,54 @@ public class InventoryController {
         return ResponseEntity.ok(
                 inventoryService
                         .reduceStock(productId, request));
+    }
+    
+    @GetMapping("/availability/{productId}")
+    public ResponseEntity<StockAvailabilityResponse>
+    checkAvailability(
+            @PathVariable Long productId) {
+
+        return ResponseEntity.ok(
+                inventoryService
+                        .checkStockAvailability(
+                                productId));
+    }
+    
+    @PostMapping("/reserve")
+    public ResponseEntity<String>
+    reserveStock(
+            @RequestBody
+            ReserveStockRequest request) {
+
+        inventoryService.reserveStock(request);
+
+        return ResponseEntity.ok(
+                "Stock reserved successfully");
+    }
+    
+    @PostMapping("/release")
+    public ResponseEntity<String>
+    releaseStock(
+            @RequestBody
+            ReleaseStockRequest request) {
+
+        inventoryService.releaseStock(request);
+
+        return ResponseEntity.ok(
+                "Stock released successfully");
+    }
+    
+    @GetMapping("/low-stock")
+    public ResponseEntity<List<InventoryResponse>>
+    getLowStockProducts(
+
+            @RequestParam(
+                    defaultValue = "10")
+            Integer threshold) {
+
+        return ResponseEntity.ok(
+                inventoryService
+                        .getLowStockProducts(
+                                threshold));
     }
 }
