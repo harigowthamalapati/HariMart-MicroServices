@@ -1,6 +1,8 @@
 package com.harimart.productservice.repository;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,4 +15,8 @@ public interface ProductRepository
 
     List<Product> findByProductNameContainingIgnoreCase(
             String keyword);
+    Page<Product> findAll(Pageable pageable);
+    
+    
+    
 }

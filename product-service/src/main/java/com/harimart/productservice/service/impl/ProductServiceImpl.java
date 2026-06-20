@@ -15,6 +15,11 @@ import com.harimart.productservice.repository.ProductRepository;
 import com.harimart.productservice.service.ProductService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -126,5 +131,57 @@ public class ProductServiceImpl implements ProductService {
 
         throw new RuntimeException(
                 "Product created but Inventory Service unavailable");
+    }
+    
+    @Override
+    public Page<ProductResponse> getProducts(
+            int page,
+            int size) {
+
+        Pageable pageable =
+                PageRequest.of(page, size);
+
+        return productRepository
+                .findAll(pageable)
+                .map(this::mapToResponse);
+    }
+    
+    @Override
+    public Page<ProductResponse> getProducts(
+            int page,
+            int size,
+            String sortBy) {
+
+        Pageable pageable =
+                PageRequest.of(
+                        page,
+                        size,
+                        Sort.by(sortBy));
+
+        return productRepository
+                .findAll(pageable)
+                .map(this::mapToResponse);
+    }
+    
+    @Override
+    public List<ProductResponse> searchProducts(
+            String keyword) {
+
+        return productRepository
+                .findByProductNameContainingIgnoreCase(keyword)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    @Override
+    public List<ProductResponse> getProductsByCategory(
+            String category) {
+
+        return productRepository
+                .findByCategoryIgnoreCase(category)
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
     }
 }

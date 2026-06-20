@@ -2,6 +2,7 @@ package com.harimart.productservice.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -61,5 +62,39 @@ public class ProductController {
 
         return ResponseEntity.ok(
                 "Product deleted successfully");
+    }
+    
+    @GetMapping("/page")
+    public ResponseEntity<Page<ProductResponse>>
+    getProducts(
+
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @RequestParam(defaultValue = "10")
+            int size) {
+
+        return ResponseEntity.ok(
+                productService.getProducts(
+                        page,
+                        size));
+    }
+    
+    @GetMapping("/search")
+    public ResponseEntity<List<ProductResponse>>
+    searchProducts(
+            @RequestParam String keyword) {
+
+        return ResponseEntity.ok(
+                productService.searchProducts(keyword));
+    }
+    
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<ProductResponse>>
+    getProductsByCategory(
+            @PathVariable String category) {
+
+        return ResponseEntity.ok(
+                productService.getProductsByCategory(category));
     }
 }
